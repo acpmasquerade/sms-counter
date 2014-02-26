@@ -39,7 +39,7 @@ Given the following markup:
 </ul>
 ```
 
-You can use the `countSms` jQuery extension to update the count on keyup:
+You can use the `countSms` jQuery extension to update the count on keyup. jQuery extension is built-in within the  library.
 
 ```javascript
 $('#message').countSms('#sms-counter')
