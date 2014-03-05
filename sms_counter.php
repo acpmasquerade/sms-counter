@@ -31,41 +31,35 @@
 class SMSCounter{
   
   // character set for GSM 7 Bit charset
+  // @deprecated
   const gsm_7bit_chars = "@£\$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà";
   
   // character set for GSM 7 Bit charset (each character takes two length)
+  // @deprecated
   const gsm_7bitEx_chars = "\\^{}\\\\\\€[~\\]\\|";
 
   const GSM_7BIT = 'GSM_7BIT';
   const GSM_7BIT_EX = 'GSM_7BIT_EX';
   const UTF16 = 'UTF16';
 
-  /**
-   * Regular Expression for 7Bit Chars
-   */
-  private static function gsm_7bit_regex(){
-    return '|^['.self::gsm_7bit_chars.']+$|';
+  public static function int_gsm_7bit_map(){
+    return array(10,32,33,34,35,36,37,38,39,40,41,42,44,45,46,47,48,49,50,
+                51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,
+                71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,
+                92,95,97,98,99,100,101,102,103,104,105,106,107,108,109,110,
+                111,112,113,114,115,116,117,118,119,120,121,122,
+                161,163,164,165,191,196,197,198,199,201,209,214,
+                216,220,223,224,228,229,230,232,233,236,241,242,
+                246,248,249,252,915,916,920,923,926,928,931,934,
+                936,937);
   }
 
-  /**
-   * Regular Expression for 7Bit Chars including 7BitEx Chars
-   */
-  private static function gsm_7bitEx_regex(){
-    return('|^['.self::gsm_7bit_chars.self::gsm_7bitEx_chars.']+$|');
+  public static function int_gsm_7bit_ex_map(){
+    return array(91,92,93,94,123,124,125,126,8364);
   }
 
-  /**
-   * Regular Expression for 7BitEx Chars only
-   */
-  private static function gsm_7bitEx_only_regex(){
-    return '|^['.self::gsm_7bitEx_chars.']+$|';
-  }
-
-  /** 
-   * Regular Expression to remove chars except 7BitEx Chars
-   */
-  private static function not_gsm_7bitEx_regex(){
-    return '|[^'.self::gsm_7bitEx_chars.']+|';
+  public static function int_gsm_7bit_combined_map(){
+    return array_merge(self::int_gsm_7bit_map(), self::int_gsm_7bit_ex_map());
   }
 
   // message length for GSM 7 Bit charset
@@ -88,13 +82,17 @@ class SMSCounter{
    * @returns - stdClass Object with params encoding,length,per_message,remaining,messages
    */
   public static function count($text){
-    $encoding = self::detect_encoding($text);
 
-    // Assume that the string is UTF-8 and calculate the multibyte string length
-    $length = mb_strlen($text, "UTF-8");
+    $unicode_array = self::utf8_to_unicode($text);
+
+    // variable to catch if any ex chars while encoding detection.
+    $ex_chars = array();
+    $encoding = self::detect_encoding($unicode_array, $ex_chars);
+
+    $length = count($unicode_array);
 
     if ( $encoding === self::GSM_7BIT_EX){
-      $length_exchars = self::count_gsm_7bitEx($text);
+      $length_exchars = count($ex_chars);
       // Each exchar in the GSM 7 Bit encoding takes one more space
       // Hence the length increases by one char for each of those Ex chars. 
       $length += $length_exchars;
@@ -147,31 +145,68 @@ class SMSCounter{
    * Detects the encoding of a particular text
    * @return - one of GSM_7BIT, GSM_7BIT_EX, UTF16
    */
-  public static function detect_encoding ($text) {
+  public static function detect_encoding ($text, & $ex_chars) {
 
-    if(mb_strlen($text) === 0){
-      return self::GSM_7BIT;
+    if(!is_array($text)){
+      $text = utf8_to_unicode($text);
     }
 
-    if(preg_match(self::gsm_7bit_regex(), $text)){
-      return self::GSM_7BIT;
-    }
-    if(preg_match(self::gsm_7bitEx_regex(), $text)){
-      return self::GSM_7BIT_EX;
-    }
-    else{
+    $utf16_chars = array_diff($text, self::int_gsm_7bit_combined_map());
+
+    if(count($utf16_chars)){
       return self::UTF16;
     }
+
+    $ex_chars = array_intersect($text, self::int_gsm_7bit_ex_map());
+
+    if(count($ex_chars)){
+      return self::GSM_7BIT_EX;
+    }else{
+      return self::GSM_7BIT;
+    }
+
   }
 
   /**
-   * function count_gsm_7bitEx($text)
-   * Counts the number of 7BitEx characters in the given string
-   * @return - int
+   * function utf8_to_unicode ($str)
+   * Original source : 
+   * Generates array of unicode points for the utf8 string
+   * @return array
    */
-  public static function count_gsm_7bitEx($text){
-    $replaced_text = preg_replace(self::not_gsm_7bitEx_regex(), '', $text);
-    return mb_strlen($replaced_text);
-  }
+  public static function utf8_to_unicode( $str ) {
+        
+        $unicode = array();        
+        $values = array();
+        $looking_for = 1;
+        
+        for ($i = 0; $i < strlen( $str ); $i++ ) {
 
+            $this_value = ord( $str[ $i ] );
+            
+            if ( $this_value < 128 ) $unicode[] = $this_value;
+            else {
+            
+                if ( count( $values ) == 0 ) $looking_for = ( $this_value < 224 ) ? 2 : 3;
+                
+                $values[] = $this_value;
+                
+                if ( count( $values ) == $looking_for ) {
+            
+                    $number = ( $looking_for == 3 ) ?
+                        ( ( $values[0] % 16 ) * 4096 ) + ( ( $values[1] % 64 ) * 64 ) + ( $values[2] % 64 ):
+                      ( ( $values[0] % 32 ) * 64 ) + ( $values[1] % 64 );
+                        
+                    $unicode[] = $number;
+                    $values = array();
+                    $looking_for = 1;
+            
+                } // if
+            
+            } // if
+            
+        } // for
+
+        return $unicode;
+    
+    } // utf8_to_unicode
 }
