@@ -57,7 +57,6 @@ $sms_count = SMSCounter::count("some-text");
 print_r($sms_count);
 ```
 ```html
-<pre>
 Outputs: 
 stdClass Object
 (
@@ -67,7 +66,6 @@ stdClass Object
     [remaining] => 151
     [messages] => 1
 )
-</pre>
 ````
 
 Refer readme-php.md for PHP Class documentation
