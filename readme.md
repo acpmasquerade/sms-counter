@@ -45,11 +45,10 @@ You can use the `countSms` jQuery extension to update the count on keyup. jQuery
 $('#message').countSms('#sms-counter')
 ```
 
-
-TODO
-----
-
-- Better docs
+PHP Class
+-----------
+SMS Counter is now available as a PHP Class too
+Refer readme-php.md for PHP Class documentation
 
 
 Known Issue
