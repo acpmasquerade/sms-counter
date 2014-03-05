@@ -47,7 +47,7 @@ $('#message').countSms('#sms-counter')
 
 PHP Class
 -----------
-SMS Counter is now available as a PHP Class too
+SMS Counter is now available as a [PHP Class] (sms_counter.php) too
 ```php
 <?php
 // include the class library
