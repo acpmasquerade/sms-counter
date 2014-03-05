@@ -47,7 +47,7 @@ $('#message').countSms('#sms-counter')
 
 PHP Class
 -----------
-SMS Counter is now available as a PHP Class too
+SMS Counter is now available as a [PHP Class] (sms_counter.php) too
 ```php
 <?php
 // include the class library
@@ -57,7 +57,6 @@ $sms_count = SMSCounter::count("some-text");
 print_r($sms_count);
 ```
 ```html
-<pre>
 Outputs: 
 stdClass Object
 (
@@ -67,7 +66,6 @@ stdClass Object
     [remaining] => 151
     [messages] => 1
 )
-</pre>
 ````
 
 Refer readme-php.md for PHP Class documentation
@@ -82,4 +80,3 @@ Known Issue
 ## License
 
 SMS Counter is released under the [MIT License](LICENSE.txt).
-
