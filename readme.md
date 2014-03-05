@@ -68,9 +68,6 @@ stdClass Object
 )
 ````
 
-Refer readme-php.md for PHP Class documentation
-
-
 Known Issue
 ----
 
